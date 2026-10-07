@@ -34,7 +34,7 @@ export const POSE_MODEL_URL =
 /** Try the GPU delegate first, then fall back to CPU if it fails to start. */
 export const POSE_DELEGATE_ORDER: ReadonlyArray<'GPU' | 'CPU'> = ['GPU', 'CPU'];
 
-/** MediaPipe's documented defaults (0.5) for the three detector confidences. */
+/** Library defaults (0.5 each, per the tasks-vision type definitions) for the three detector confidences. */
 export const POSE_MIN_DETECTION_CONFIDENCE = 0.5;
 export const POSE_MIN_PRESENCE_CONFIDENCE = 0.5;
 export const POSE_MIN_TRACKING_CONFIDENCE = 0.5;

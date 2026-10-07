@@ -319,11 +319,14 @@ function jumpCard(w: Work, j: JumpItem, n: number, onChange: () => void, onDelet
       drawFloor(c, w.floor!.floorY, w.floor!.bandPx, view);
       drawSkeleton(c, s.frames[i], w.side!, s.width, s.height, view);
     } catch (e) {
+      console.error('Review frame failed', e);
       const c = canvas.getContext('2d')!;
-      canvas.width = 320;
-      canvas.height = 180;
+      canvas.width = 640;
+      canvas.height = 200;
       c.fillStyle = '#fff';
-      c.fillText(`Frame ${i} could not be shown: ${String(e)}`, 10, 90);
+      c.font = '20px -apple-system, system-ui, sans-serif';
+      c.fillText(`Frame ${i} could not be shown:`, 16, 80);
+      c.fillText(String((e as Error)?.message ?? e).slice(0, 60), 16, 112);
     }
   };
 
@@ -450,20 +453,26 @@ export function renderReviewLift(): HTMLElement {
   type RVFC = (cb: (now: number, meta: { mediaTime: number }) => void) => number;
   const rvfc = (video as unknown as { requestVideoFrameCallback?: RVFC }).requestVideoFrameCallback?.bind(video);
   const loop = () => {
-    if (!video.isConnected) {
-      URL.revokeObjectURL(url);
-      return;
-    }
-    if (rvfc)
-      rvfc((_n, meta) => {
-        drawOverlay(meta.mediaTime);
-        loop();
-      });
+    rvfc?.((_n, meta) => {
+      drawOverlay(meta.mediaTime);
+      loop();
+    });
   };
   if (rvfc) loop();
   else video.addEventListener('timeupdate', () => drawOverlay(video.currentTime));
   video.addEventListener('seeked', () => drawOverlay(video.currentTime));
   video.addEventListener('loadeddata', () => drawOverlay(video.currentTime));
+  // Release the object URL once this screen has been replaced.
+  const watch = window.setInterval(() => {
+    if (document.body.contains(wrap)) return;
+    if (!wrap.isConnected && wrap.dataset.mounted) {
+      window.clearInterval(watch);
+      video.removeAttribute('src');
+      video.load();
+      URL.revokeObjectURL(url);
+    }
+  }, 2000);
+  requestAnimationFrame(() => (wrap.dataset.mounted = '1'));
 
   const signal = res.signal.map((v) => (v === null ? null : w.lift === 'squat' ? v * 100 : v));
   const chart = traceChart({
